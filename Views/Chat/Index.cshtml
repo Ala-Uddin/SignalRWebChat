@@ -1,0 +1,63 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link href="~/Content/bootstrap.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-3.0.0.js"></script>
+<script src="~/Scripts/knockout-3.5.1.js"></script>
+<script src="~/Scripts/jquery.signalR-2.4.1.js"></script>
+<script src="~/signalR/js"></script>
+
+<div style="width:400px">
+    <h1>My Chat Application</h1>
+    <br />
+    <label>    User:-<span class="text-success" data-bind="text:object.user"></span></label>
+    <br />
+    <div class="form-group">
+        <label for="txtMessage" class="form-control text-center">Message</label>
+        <input id="txtMessage" class="form-control" data-bind="value: object.message" />
+        <br />
+        <button class="btn btn-success" data-bind="click:sendMessage">Send</button>
+    </div>
+</div>
+<div  class="container">
+    <h1>Coversation</h1>
+    <dl  data-bind="foreach:object.messageList">
+        <dt class="text-success" data-bind="text:Sender"></dt>
+        <dd data-bind="text:Content"></dd> <dd data-bind="text:Time"></dd>
+    </dl>
+</div>
+<script>
+    var hub = $.connection.myHub;
+    var connected = false;
+
+    var object = {
+        user: ko.observable(),
+        message: ko.observable(),
+        messageList: ko.observableArray([])
+    };
+
+    function sendMessage() {
+        if (connected) {
+            hub.server.sendMessage(object.user(), object.message());
+            object.message(null);
+        }
+    };
+
+    hub.client.get = function (msg) {
+        object.messageList.push(msg);
+    };
+
+    hub.client.getAll = function (msgList) {
+        object.messageList(msgList);
+    };
+
+    $.connection.hub.start().done(function () {
+        connected = true;
+        var username = prompt("Enter Your Name");
+        
+        object.user(username);
+        hub.server.getAllMessage();
+    });
+    ko.applyBindings();
+
+</script>
